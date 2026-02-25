@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function HeroSection() {
     return (
-        <section className="relative w-full bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 py-24 text-white overflow-hidden text-center">
+        <section className="relative w-full bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 pt-12 pb-24 md:py-24 text-white overflow-hidden text-center">
             <div className="absolute inset-0 bg-black/20" />
             <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-center">
                 <span className="mb-4 inline-block rounded-full bg-blue-100/10 px-4 py-1.5 text-sm font-medium text-blue-100 backdrop-blur-md border border-blue-100/20">
