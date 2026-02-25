@@ -26,7 +26,7 @@ export default function HeroSection() {
                     </div>
                 </div>
                 <p className="text-xl md:text-2xl font-bold text-white mb-6 drop-shadow-md">
-                    📍 Local: Recanto do Vencedores
+                    📍 Local: Recanto dos Vencedores
                 </p>
                 <Link href="/inscricao" className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 font-bold text-blue-900 transition-transform hover:scale-105 hover:shadow-xl active:scale-95">
                     Inscreva-se Agora
