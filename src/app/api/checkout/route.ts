@@ -14,7 +14,7 @@ export async function POST(request: Request) {
             },
             body: JSON.stringify({
                 handle: 'derekmartinezdk',
-                redirect_url: 'http://localhost:3000/sucesso',
+                redirect_url: 'https://encontro-com-deus-eldorado-ibi.vercel.app/sucesso',
                 items: [
                     {
                         quantity: 1,
