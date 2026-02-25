@@ -25,6 +25,9 @@ export default function HeroSection() {
                         Valor: R$ 120,00
                     </div>
                 </div>
+                <p className="text-xl md:text-2xl font-bold text-white mb-6 drop-shadow-md">
+                    📍 Local: Recanto do Vencedores
+                </p>
                 <Link href="/inscricao" className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 font-bold text-blue-900 transition-transform hover:scale-105 hover:shadow-xl active:scale-95">
                     Inscreva-se Agora
                     <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
