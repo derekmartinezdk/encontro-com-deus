@@ -6,7 +6,7 @@ export default function HeroSection() {
             <div className="absolute inset-0 bg-black/20" />
             <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-center">
                 <span className="mb-4 inline-block rounded-full bg-blue-100/10 px-4 py-1.5 text-sm font-medium text-blue-100 backdrop-blur-md border border-blue-100/20">
-                    Tudo pode mudar em 3 Dias, você está a uma decisão de viver algo novo
+                    Tudo pode mudar em 3 dias, você está a uma decisão de viver algo novo
                 </span>
                 <h2 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 drop-shadow-sm">
                     ENCONTRO COM DEUS RADICAIS LIVRES
