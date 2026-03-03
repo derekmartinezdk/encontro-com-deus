@@ -15,17 +15,18 @@ export async function POST(request: Request) {
             sexo: body.sexo || null,
             discipulador: body.discipulador || null,
             rede: body.rede || null,
-            funcao: body.funcao || null,
-            fez_ctl: body.ctl || null,
-            fez_maturidade: body.maturidade || null,
             data_nascimento: body.dataNascimento || null,
             celular: body.celular || null,
             endereco: body.endereco || null,
             lider_celula: body.liderCelula || null,
             estado_civil: body.estadoCivil || null,
             deficiencia_fisica: body.deficienciaFisica || null,
-            medicamento: body.medicamento || null,
-            contato_emergencia: body.emergencia || null
+            uso_medicamento: body.medicamento || null, // alterado de medicamento para uso_medicamento para adequar ao schema
+            contato_emergencia: body.emergencia || null,
+            txid: null,
+            status_pagamento: "pendente",
+            qr_code: null,
+            valor: 120
         };
 
         const { data: dbData, error: dbError } = await supabase
