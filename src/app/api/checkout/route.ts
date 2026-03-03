@@ -5,13 +5,25 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
 
+        let calculatedIdade = null;
+        if (body.dataNascimento) {
+            const birthDate = new Date(body.dataNascimento);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            calculatedIdade = age;
+        }
+
         console.log("=== SALVANDO ENCONTRISTA NO BANCO DE DADOS ===");
 
         // Mapeando para as colunas do banco de dados
         const insertPayload = {
             tipo_inscricao: "ENCONTRISTA", // Forçando ENCONTRISTA nesta rota
             nome_completo: body.nome || "",
-            idade: body.idade ? parseInt(body.idade) : null,
+            idade: calculatedIdade, // Calculada automaticamente
             sexo: body.sexo || null,
             discipulador: body.discipulador || null,
             rede: body.rede || null,
