@@ -33,46 +33,15 @@ export default function InscricaoPage() {
         setLoading(true);
 
         try {
-            console.log("=== SALVANDO NO BANCO DE DADOS ===");
+            console.log("=== ENVIANDO DADOS PARA API ===");
 
-            // Mapeando para as colunas do banco de dados
-            const insertPayload = {
-                tipo_inscricao: type || "",
-                nome_completo: formData.nome || "",
-                idade: formData.idade ? parseInt(formData.idade) : null,
-                sexo: formData.sexo || null,
-                discipulador: formData.discipulador || null,
-                rede: formData.rede || null,
-                funcao: formData.funcao || null,
-                fez_ctl: formData.ctl || null,
-                fez_maturidade: formData.maturidade || null,
-                data_nascimento: formData.dataNascimento || null,
-                celular: formData.celular || null,
-                endereco: formData.endereco || null,
-                lider_celula: formData.liderCelula || null,
-                estado_civil: formData.estadoCivil || null,
-                deficiencia_fisica: formData.deficienciaFisica || null,
-                medicamento: formData.medicamento || null,
-                contato_emergencia: formData.emergencia || null
-            };
+            // Define qual endpoint chamar com base no tipo
+            const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
 
-            const { error: dbError } = await supabase
-                .from('inscricoes')
-                .insert([insertPayload]);
-
-            if (dbError) {
-                console.error("Erro detalhado:", dbError?.message || JSON.stringify(dbError));
-                alert("Erro ao salvar inscrição no banco de dados. Tente novamente.");
-                setLoading(false);
-                return; // Bloqueia o redirecionamento
-            }
-
-            console.log("=== ENVIANDO DADOS PARA API INFINITEPAY ===");
-
-            const res = await fetch("/api/checkout", {
+            const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, tipo: type }),
+                body: JSON.stringify({ ...formData, type }), // Enviando type caso necessário
             });
 
             const data = await res.json();

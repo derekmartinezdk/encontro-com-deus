@@ -5,41 +5,37 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
 
-        console.log("=== SALVANDO ENCONTRISTA NO BANCO DE DADOS ===");
+        console.log("=== SALVANDO SERVO NO BANCO DE DADOS ===");
 
-        // Mapeando para as colunas do banco de dados
+        // Mapeando para as colunas do banco de dados (Apenas campos de Servos + Sistema)
         const insertPayload = {
-            tipo_inscricao: "ENCONTRISTA", // Forçando ENCONTRISTA nesta rota
+            tipo_inscricao: "SERVO",
             nome_completo: body.nome || "",
             idade: body.idade ? parseInt(body.idade) : null,
             sexo: body.sexo || null,
-            discipulador: body.discipulador || null,
+            funcao_igreja: body.funcao || null,
             rede: body.rede || null,
-            funcao: body.funcao || null,
             fez_ctl: body.ctl || null,
             fez_maturidade: body.maturidade || null,
-            data_nascimento: body.dataNascimento || null,
-            celular: body.celular || null,
-            endereco: body.endereco || null,
-            lider_celula: body.liderCelula || null,
-            estado_civil: body.estadoCivil || null,
-            deficiencia_fisica: body.deficienciaFisica || null,
-            medicamento: body.medicamento || null,
-            contato_emergencia: body.emergencia || null
+            // Campos de sistema / pagamento (de acordo com instruções)
+            txid: null,
+            status_pagamento: "pendente",
+            qr_code: null,
+            valor: 120 // Valor da inscrição
         };
 
         const { data: dbData, error: dbError } = await supabase
-            .from('inscricoes')
+            .from('inscricoes_servos')
             .insert([insertPayload])
             .select()
             .single();
 
         if (dbError) {
-            console.error("Erro detalhado:", dbError?.message || JSON.stringify(dbError));
+            console.error("Erro detalhado ao salvar no banco:", dbError?.message || JSON.stringify(dbError));
             return NextResponse.json({ error: 'Erro ao salvar inscrição no banco de dados', details: dbError }, { status: 500 });
         }
 
-        const inscricaoId = dbData.id;
+        const servoId = dbData.id;
 
         // Faz a requisição nativa para a InfinitePay
         console.log("Iniciando requisição para InfinitePay...");
@@ -55,13 +51,14 @@ export async function POST(request: Request) {
                 items: [
                     {
                         quantity: 1,
-                        price: 12000, // Alinhado com R$ 120,00 igual checkout-servo
-                        description: 'Inscrição Encontrista - ENCONTRO COM DEUS'
+                        price: 12000, // Ajustado para 120 reais em centavos se for o usual da infinitepay, ou 200 dependendo do evento. O frontend diz 120. No checkout dizia 200. Mantendo o padrão
+                        description: 'Inscrição Servo - ENCONTRO COM DEUS'
                     }
                 ],
+                // Passar o ID do pedido como metadata, caso a API suporte, ou gerar nosso txid
                 metadata: {
-                    id_inscricao: inscricaoId,
-                    tipo: "ENCONTRISTA"
+                    id_inscricao: servoId,
+                    tipo: "SERVO"
                 }
             })
         });
@@ -73,17 +70,20 @@ export async function POST(request: Request) {
 
         if (!response.ok) {
             console.error("Erro na InfinitePay:", data);
+            // Poderíamos deletar a linha no banco aqui, ou apenas marcar como erro
             return NextResponse.json({ error: 'Erro ao gerar pagamento na InfinitePay', details: data }, { status: response.status });
         }
 
+        // Obtém a URL do pagamento
         const paymentUrl = data.url || data.link || (data.data && data.data.url) || null;
 
         // Se a Infinite Pay retornar o ID da transação, atualizamos no banco
+        // Considerando que data.id seja o "txid" da InfinitePay
         if (data.id) {
             const { error: updateError } = await supabase
-                .from('inscricoes')
+                .from('inscricoes_servos')
                 .update({ txid: data.id })
-                .eq('id', inscricaoId);
+                .eq('id', servoId);
 
             if (updateError) {
                 console.error("Erro ao atualizar txid no banco:", updateError);
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ init_point: paymentUrl }, { status: 200 });
     } catch (error) {
-        console.error("Erro no servidor ao tentar gerar checkout:", error);
+        console.error("Erro no servidor ao tentar processar checkout de servo:", error);
         return NextResponse.json({ error: 'Erro interno ao tentar processar checkout' }, { status: 500 });
     }
 }
