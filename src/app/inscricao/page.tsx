@@ -35,6 +35,11 @@ export default function InscricaoPage() {
         try {
             console.log("=== ENVIANDO DADOS PARA API ===");
 
+            // Guardar o tipo no localStorage para a página de sucesso saber qual variável de estado usar
+            if (type) {
+                localStorage.setItem("tipoInscricao", type);
+            }
+
             // Define qual endpoint chamar com base no tipo
             const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
 

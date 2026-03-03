@@ -1,7 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import Header from "@/components/Header";
+import { useEffect, useState } from "react";
 
 export default function SucessoPage() {
+    const [tipoInscricao, setTipoInscricao] = useState<string | null>(null);
+
+    useEffect(() => {
+        setTipoInscricao(localStorage.getItem("tipoInscricao"));
+    }, []);
+
+    const isServo = tipoInscricao === "SERVO";
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-blue-200">
             <Header />
@@ -17,11 +28,15 @@ export default function SucessoPage() {
                     </div>
 
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">
-                        Inscrição Confirmada! 🎉
+                        {isServo ? "Inscrição de Servo Confirmada! 🎉" : "Inscrição Confirmada! 🎉"}
                     </h1>
 
                     <p className="text-gray-600 mb-8 leading-relaxed text-lg">
-                        Sua vaga para o <strong className="text-blue-900 font-semibold">Encontro com Deus</strong> está garantida. Avise seu líder dessa ótima notícia.
+                        {isServo ? (
+                            <>Sua vaga na equipe de servos para o <strong className="text-blue-900 font-semibold">Encontro com Deus</strong> está garantida. Avise seu Discipulador dessa ótima notícia.</>
+                        ) : (
+                            <>Sua vaga para o <strong className="text-blue-900 font-semibold">Encontro com Deus</strong> está garantida. Avise seu líder dessa ótima notícia.</>
+                        )}
                     </p>
 
                     <Link
