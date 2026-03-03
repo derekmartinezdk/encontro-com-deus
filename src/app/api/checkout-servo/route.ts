@@ -21,7 +21,7 @@ export async function POST(request: Request) {
             txid: null,
             status_pagamento: "pendente",
             qr_code: null,
-            valor: 120 // Valor da inscrição
+            valor: 1 // Valor de demonstração (R$ 1,00)
         };
 
         const { data: dbData, error: dbError } = await supabase
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
                 items: [
                     {
                         quantity: 1,
-                        price: 12000, // Ajustado para 120 reais em centavos se for o usual da infinitepay, ou 200 dependendo do evento. O frontend diz 120. No checkout dizia 200. Mantendo o padrão
+                        price: 100, // Preço teste R$ 1,00
                         description: 'Inscrição Servo - ENCONTRO COM DEUS'
                     }
                 ],

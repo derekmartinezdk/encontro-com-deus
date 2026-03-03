@@ -100,7 +100,7 @@ export default function InscricaoPage() {
 
                                 <button
                                     onClick={() => handleSelectType("SERVO")}
-                                    className="group relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl border-2 border-transparent hover:indigo-500 transition-all duration-300 text-left overflow-hidden flex flex-col items-center text-center focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
+                                    className="group relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl border-2 border-transparent hover:border-blue-500 transition-all duration-300 text-left overflow-hidden flex flex-col items-center text-center focus:outline-none focus:ring-4 focus:ring-blue-500/20"
                                 >
                                     <div className="bg-indigo-50 w-20 h-20 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                         <svg className="w-10 h-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -291,7 +291,7 @@ export default function InscricaoPage() {
                                             <label className="flex items-start gap-4 cursor-pointer text-gray-900">
                                                 <input type="checkbox" required className="w-6 h-6 shrink-0 mt-1 text-gray-900 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
                                                 <span className="text-sm text-gray-700 leading-relaxed">
-                                                    <strong>Declaração de Ciência:</strong> Estou ciente da minha participação no ENCONTRO COM DEUS, promovido pela Igreja Batista Imperial em Células durante os dias 13, 14 e 15 de março de 2026. Durante o período da minha participação me submeterei aos organizadores, as atividades e as normas e horário do evento. Declaro-me ciente também que o valor da inscrição é de R$ 120,00. E estou consciente que este evento é espiritual onde estarei ouvindo e aprendendo a Palavra de Deus através da Bíblia, não haverá atividade de lazer como; piscina, futebol, jogos, etc. - <strong>Ciente: SIM</strong>
+                                                    <strong>Declaração de Ciência:</strong> Estou ciente da minha participação no ENCONTRO COM DEUS, promovido pela Igreja Batista Imperial em Células durante os dias 13, 14 e 15 de março de 2026. Durante o período da minha participação me submeterei aos organizadores, as atividades e as normas e horário do evento. Declaro-me ciente também que o valor da inscrição é de R$ 1,00. E estou consciente que este evento é espiritual onde estarei ouvindo e aprendendo a Palavra de Deus através da Bíblia, não haverá atividade de lazer como; piscina, futebol, jogos, etc. - <strong>Ciente: SIM</strong>
                                                 </span>
                                             </label>
                                         </div>
@@ -306,7 +306,7 @@ export default function InscricaoPage() {
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                         ) : (
-                                            "Ir para o Pagamento (R$ 120,00)"
+                                            "Ir para o Pagamento (R$ 1,00)"
                                         )}
                                     </button>
                                 </div>
