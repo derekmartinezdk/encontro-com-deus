@@ -296,7 +296,7 @@ export default function InscricaoPage() {
                                             <label className="flex items-start gap-4 cursor-pointer text-gray-900">
                                                 <input type="checkbox" required className="w-6 h-6 shrink-0 mt-1 text-gray-900 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
                                                 <span className="text-sm text-gray-700 leading-relaxed">
-                                                    <strong>Declaração de Ciência:</strong> Estou ciente da minha participação no ENCONTRO COM DEUS, promovido pela Igreja Batista Imperial em Células durante os dias 13, 14 e 15 de março de 2026. Durante o período da minha participação me submeterei aos organizadores, as atividades e as normas e horário do evento. Declaro-me ciente também que o valor da inscrição é de R$ 1,00. E estou consciente que este evento é espiritual onde estarei ouvindo e aprendendo a Palavra de Deus através da Bíblia, não haverá atividade de lazer como; piscina, futebol, jogos, etc. - <strong>Ciente: SIM</strong>
+                                                    <strong>Declaração de Ciência:</strong> Estou ciente da minha participação no ENCONTRO COM DEUS, promovido pela Igreja Batista Imperial em Células durante os dias 13, 14 e 15 de março de 2026. Durante o período da minha participação me submeterei aos organizadores, as atividades e as normas e horário do evento. Declaro-me ciente também que o valor da inscrição é de R$ 120,00. E estou consciente que este evento é espiritual onde estarei ouvindo e aprendendo a Palavra de Deus através da Bíblia, não haverá atividade de lazer como; piscina, futebol, jogos, etc. - <strong>Ciente: SIM</strong>
                                                 </span>
                                             </label>
                                         </div>
@@ -311,7 +311,7 @@ export default function InscricaoPage() {
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                         ) : (
-                                            "Ir para o Pagamento (R$ 1,00)"
+                                            "Ir para o Pagamento (R$ 120,00)"
                                         )}
                                     </button>
                                 </div>

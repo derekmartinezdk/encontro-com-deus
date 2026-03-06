@@ -38,7 +38,7 @@ export async function POST(request: Request) {
             txid: null,
             status_pagamento: "pendente",
             qr_code: null,
-            valor: 1
+            valor: 120
         };
 
         const { data: dbData, error: dbError } = await supabase
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
                 items: [
                     {
                         quantity: 1,
-                        price: 100, // Preço teste R$ 1,00
+                        price: 12000, // Preço oficial R$ 120,00
                         description: 'Inscrição Encontrista - ENCONTRO COM DEUS'
                     }
                 ],
