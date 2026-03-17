@@ -61,31 +61,44 @@ export default function InscricaoPage() {
     };
 
     const handlePaymentSubmit = async (paymentFormData: any) => {
-        return new Promise<void>((resolve, reject) => {
-            const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
+        return new Promise<void>(async (resolve, reject) => {
+            try {
+                const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
 
-            fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, type, paymentData: paymentFormData }),
-            })
-                .then(async (res) => {
-                    const data = await res.json();
-                    if (res.ok && !data.error) {
-                        resolve();
-                        // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
-                        if (data.status === 'approved') {
-                            setTimeout(() => window.location.href = "/sucesso", 2000);
-                        }
-                        // Se for PIX, o Brick cuida de exibir o QR Code em tela e aguardar
-                    } else {
-                        reject();
-                    }
-                })
-                .catch((err) => {
-                    console.error(err);
-                    reject();
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...formData, type, paymentData: paymentFormData }),
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Erro na API de Checkout:", errorData);
+                    alert("Erro ao processar pagamento. Verifique os dados ou o console e tente novamente.");
+                    return reject(); // Rejeita para o botão destravar
+                }
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error("Erro retornado:", data.error);
+                    alert("Erro reportado pelo servidor. Tente novamente.");
+                    return reject();
+                }
+
+                // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
+                if (data.status === 'approved') {
+                    setTimeout(() => window.location.href = "/sucesso", 2000);
+                }
+                
+                // Em cenário ideal sem throw, resolvemos a Promise para destravar loading visual do botão MP
+                resolve();
+
+            } catch (error) {
+                console.error("Erro processando o fetch:", error);
+                alert("Falha grave na comunicação com pagamento.");
+                reject();
+            }
         });
     };
 
