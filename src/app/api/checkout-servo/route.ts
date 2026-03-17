@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         try {
             paymentResponse = await payment.create({
                 body: {
-                    transaction_amount: Number(paymentData.transaction_amount || 120),
+                    transaction_amount: 120,
                     description: paymentData.description || 'Inscrição Encontro - Servo',
                     installments: paymentData.installments,
                     payment_method_id: paymentData.payment_method_id,

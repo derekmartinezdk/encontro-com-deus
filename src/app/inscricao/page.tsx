@@ -53,6 +53,7 @@ export default function InscricaoPage() {
                 // 1. CLONAR E INJETAR O EMAIL FORÇADAMENTE
                 const payloadCompletoMP = {
                     ...paymentFormData,
+                    transaction_amount: 120, // Garante que o SDK do MP não perca o valor numérico
                     email: formData.email, // Garante na raiz
                     payer: {
                         ...(paymentFormData.payer || {}),

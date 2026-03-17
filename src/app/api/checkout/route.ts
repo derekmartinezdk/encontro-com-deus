@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
         const paymentResponse = await payment.create({
             body: {
-                transaction_amount: paymentData.transaction_amount,
+                transaction_amount: 120,
                 token: paymentData.token,
                 description: 'Inscrição Encontrista - ENCONTRO COM DEUS',
                 installments: paymentData.installments,
