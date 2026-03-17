@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
-import dynamic from 'next/dynamic';
-
-const PaymentBrick = dynamic(() => import('./PaymentBrickWrapper'), { ssr: false });
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
 type Step = 1 | 2 | 3;
 type InscriptionType = "ENCONTRISTA" | "SERVO" | null;
@@ -20,6 +18,12 @@ export default function InscricaoPage() {
     const [type, setType] = useState<InscriptionType>(null);
     const [formData, setFormData] = useState<any>({});
     const [loading, setLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
+        setIsMounted(true);
+    }, []);
 
     const handleSelectType = (selectedType: InscriptionType) => {
         setType(selectedType);
@@ -343,16 +347,23 @@ export default function InscricaoPage() {
                                     <p className="text-gray-500 text-sm">Escolha PIX ou Cartão de Crédito</p>
                                 </div>
                             </div>
-                            <PaymentBrick
-                                initialization={{ amount: 120 }}
-                                customization={{
-                                    paymentMethods: {
-                                        bankTransfer: "all",
-                                        creditCard: "all",
-                                    },
-                                }}
-                                onSubmit={handlePaymentSubmit}
-                            />
+                            
+                            {isMounted ? (
+                                <Payment
+                                    initialization={{ amount: 120 }}
+                                    customization={{
+                                        paymentMethods: {
+                                            bankTransfer: "all",
+                                            creditCard: "all",
+                                        },
+                                    }}
+                                    onSubmit={handlePaymentSubmit}
+                                />
+                            ) : (
+                                <div className="text-center p-8 text-gray-500 font-medium">
+                                    Carregando ambiente seguro de pagamento...
+                                </div>
+                            )}
                         </div>
                     )}
 
