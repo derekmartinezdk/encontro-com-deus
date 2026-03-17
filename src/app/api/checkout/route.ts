@@ -88,8 +88,20 @@ export async function POST(request: Request) {
             qr_code: paymentResponse.point_of_interaction?.transaction_data?.qr_code || null
         }, { status: 200 });
 
-    } catch (error) {
-        console.error("Erro no servidor ao tentar processar checkout:", error);
-        return NextResponse.json({ error: 'Erro interno ao tentar processar checkout' }, { status: 500 });
+    } catch (error: any) {
+        console.error("ERRO COMPLETO NO BACKEND:", error);
+        
+        // Extraindo a mensagem real, seja do Supabase ou do Mercado Pago
+        const errorMessage = error?.message || "Erro desconhecido";
+        const errorDetails = error?.response || error?.details || error;
+
+        return NextResponse.json(
+            { 
+                error: "Erro interno ao processar pagamento", 
+                details: errorDetails,
+                message: errorMessage
+            }, 
+            { status: 500 }
+        );
     }
 }
