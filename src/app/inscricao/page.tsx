@@ -178,9 +178,14 @@ export default function InscricaoPage() {
                                 {/* CAMPOS PARA SERVO */}
                                 {type === "SERVO" && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2">
+                                        <div className="md:col-span-1">
                                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nome Completo</label>
                                             <input type="text" required onChange={(e) => handleInputChange("nome", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                                        </div>
+
+                                        <div className="md:col-span-1">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">E-mail *</label>
+                                            <input type="email" required placeholder="seu.email@exemplo.com" value={formData.email || ''} onChange={(e) => handleInputChange("email", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all" />
                                         </div>
 
                                         <div>
