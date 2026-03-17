@@ -42,29 +42,29 @@ export default function InscricaoPage() {
     const handlePaymentSubmit = async (paymentFormData: any) => {
         return new Promise<void>((resolve, reject) => {
             const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
-            
+
             fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...formData, type, paymentData: paymentFormData }),
             })
-            .then(async (res) => {
-                const data = await res.json();
-                if (res.ok && !data.error) {
-                    resolve();
-                    // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
-                    if (data.status === 'approved') {
-                        setTimeout(() => window.location.href = "/sucesso", 2000);
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (res.ok && !data.error) {
+                        resolve();
+                        // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
+                        if (data.status === 'approved') {
+                            setTimeout(() => window.location.href = "/sucesso", 2000);
+                        }
+                        // Se for PIX, o Brick cuida de exibir o QR Code em tela e aguardar
+                    } else {
+                        reject();
                     }
-                    // Se for PIX, o Brick cuida de exibir o QR Code em tela e aguardar
-                } else {
+                })
+                .catch((err) => {
+                    console.error(err);
                     reject();
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-                reject();
-            });
+                });
         });
     };
 
@@ -323,7 +323,7 @@ export default function InscricaoPage() {
 
                                 <div className="pt-6 border-t mt-8">
                                     <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/30 text-lg flex items-center justify-center gap-2">
-                                        Ir para o Pagamento (R$ 120,00)
+                                        Ir para o Pagamento
                                     </button>
                                 </div>
 
