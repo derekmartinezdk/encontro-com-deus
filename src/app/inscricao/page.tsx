@@ -349,7 +349,7 @@ export default function InscricaoPage() {
                                 initialization={{ amount: 120 }}
                                 customization={{
                                     paymentMethods: {
-                                        pix: "all",
+                                        bankTransfer: "all",
                                         creditCard: "all",
                                     },
                                 }}
