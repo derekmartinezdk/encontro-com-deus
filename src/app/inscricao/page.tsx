@@ -352,7 +352,12 @@ export default function InscricaoPage() {
                             
                             {isMounted ? (
                                 <Payment
-                                    initialization={{ amount: 120 }}
+                                    initialization={{
+                                        amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
+                                        payer: {
+                                            email: formData.email || "", 
+                                        }
+                                    }}
                                     customization={{
                                         paymentMethods: {
                                             bankTransfer: "all",
