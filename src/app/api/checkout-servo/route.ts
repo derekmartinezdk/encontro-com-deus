@@ -27,23 +27,24 @@ export async function POST(req: Request) {
 
         console.log("=== PROCESSANDO PAGAMENTO SERVO ===");
 
-        const finalPayerEmail = paymentData?.payer?.email || paymentData?.email || userData?.email || body?.email || 'fallback@encontro.com';
+        // 1. DESEMPACOTAMENTO CORRETO DO PAYLOAD DO BRICK
+        const brickData = body.paymentData || body;
 
-        // 2. MONTAGEM DO PAYLOAD (Mantendo o transaction_amount: 120)
+        // 2. MONTAGEM DO PAYLOAD LENDO DE 'brickData'
         const mpPayload: any = {
             transaction_amount: 120, // Forçado como Number absoluto
-            description: paymentData?.description || 'Inscrição Encontro - Servo',
-            payment_method_id: paymentData?.payment_method_id,
+            description: body.description || 'Inscrição Encontro - Servo',
+            payment_method_id: brickData.payment_method_id,
             payer: {
-                ...(paymentData?.payer || {}),
-                email: finalPayerEmail
+                ...(brickData.payer || {}),
+                email: body.email || brickData.payer?.email || 'fallback@encontro.com'
             }
         };
 
-        // O token do cartão é obrigatório para crédito, repassamos se existirem
-        if (paymentData?.token) mpPayload.token = paymentData.token;
-        if (paymentData?.installments) mpPayload.installments = Number(paymentData.installments);
-        if (paymentData?.issuer_id) mpPayload.issuer_id = String(paymentData.issuer_id);
+        // Se for cartão, extrai os dados adicionais do brickData
+        if (brickData.token) mpPayload.token = brickData.token;
+        if (brickData.installments) mpPayload.installments = Number(brickData.installments);
+        if (brickData.issuer_id) mpPayload.issuer_id = String(brickData.issuer_id);
 
         let paymentResponse;
         try {
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
         const insertPayload = {
             tipo_inscricao: "SERVO",
             nome_completo: userData?.nome || "",
-            email: userData?.email || finalPayerEmail,
+            email: userData?.email || mpPayload.payer.email,
             idade: userData?.idade ? parseInt(userData.idade) : null,
             sexo: userData?.sexo || null,
             funcao_igreja: userData?.funcao || null,
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
             valor: 120
         };
 
-        if (paymentData?.payment_method_id === 'pix') {
+        if (brickData.payment_method_id === 'pix') {
             insertPayload.status_pagamento = 'pendente';
         } else {
             if (paymentResponse.status === 'approved') {
