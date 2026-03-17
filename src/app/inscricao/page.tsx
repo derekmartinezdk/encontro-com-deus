@@ -23,7 +23,7 @@ export default function InscricaoPage() {
     const initialization = useMemo(() => ({
         amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
         payer: {
-            email: formData.email, 
+            email: formData?.email || "pagador@teste.com", 
         }
     }), [formData?.email]);
 
@@ -64,6 +64,16 @@ export default function InscricaoPage() {
             try {
                 const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
 
+                // 1. CLONAR E INJETAR O EMAIL FORÇADAMENTE
+                const payloadCompletoMP = {
+                    ...paymentFormData,
+                    email: formData.email, // Garante na raiz
+                    payer: {
+                        ...(paymentFormData.payer || {}),
+                        email: formData.email // Garante dentro do objeto payer do MP
+                    }
+                };
+
                 const response = await fetch(endpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -71,7 +81,7 @@ export default function InscricaoPage() {
                         ...formData, 
                         type, 
                         email: formData.email, // Garante injecao explicita
-                        paymentData: paymentFormData 
+                        paymentData: payloadCompletoMP 
                     }),
                 });
 
