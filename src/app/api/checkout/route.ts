@@ -32,7 +32,7 @@ export async function POST(req: Request) {
             calculatedIdade = age;
         }
 
-        // 2. INICIALIZAÇÃO MP COM TIMEOUT DEFINIDO
+        // 1. INICIALIZAÇÃO CORRETA E NO ESCOPO (Resolve 'client is not defined')
         const accessToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
         const client = new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } });
         const payment = new Payment(client);
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
         const finalPayerEmail = paymentData?.payer?.email || paymentData?.email || userData?.email || body?.email || 'fallback@encontro.com';
 
-        // 3. PAYLOAD HARDCODED SEGURO
+        // 2. MONTAGEM DO PAYLOAD (Mantendo o transaction_amount: 120)
         const mpPayload: any = {
             transaction_amount: 120, // Forçado
             description: paymentData?.description || 'Inscrição Encontrista - ENCONTRO COM DEUS',
