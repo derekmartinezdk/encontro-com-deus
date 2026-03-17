@@ -15,6 +15,7 @@ export async function POST(request: Request) {
             sexo: body.sexo || null,
             funcao_igreja: body.funcao || null,
             rede: body.rede || null,
+            discipulador: body.discipulador || null,
             fez_ctl: body.ctl || null,
             fez_maturidade: body.maturidade || null,
             // Campos de sistema / pagamento (de acordo com instruções)

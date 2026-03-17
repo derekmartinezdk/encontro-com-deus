@@ -167,6 +167,14 @@ export default function InscricaoPage() {
                                         </div>
 
                                         <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Discipulador(a)</label>
+                                            <select required onChange={(e) => handleInputChange("discipulador", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none">
+                                                <option className="text-gray-900" value="">Selecione...</option>
+                                                {DISCIPULADORES.map(d => <option className="text-gray-900" key={d} value={d}>{d}</option>)}
+                                            </select>
+                                        </div>
+
+                                        <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Rede</label>
                                             <select required onChange={(e) => handleInputChange("rede", e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none">
                                                 <option className="text-gray-900" value="">Selecione...</option>
