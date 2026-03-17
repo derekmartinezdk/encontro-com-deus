@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // <-- COMANDO CRÍTICO PARA MATAR O CACHE
+
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
@@ -57,10 +59,7 @@ export async function POST(req: Request) {
             transaction_amount: 120, // Forçado
             description: body.description || 'Inscrição Encontrista - ENCONTRO COM DEUS',
             payment_method_id: methodId,
-            payer: {
-                ...(body.payer || body.formData?.payer || body.paymentData?.payer || {}),
-                email: testUserEmail // Bypass total ativo
-            }
+            payer: { email: testUserEmail } // Substituição forçada do e-mail para liberar Sandbox
         };
 
         // Extração defensiva para cartões - garantida de bater em todas as rotas
@@ -132,10 +131,10 @@ export async function POST(req: Request) {
         }, { status: 201 });
 
     } catch (error: any) {
-        console.error("CATASTROFE NO BACKEND:", error);
+        console.error("ERRO MP:", error);
         return NextResponse.json(
             { 
-                error: "V3_FALHA_SDK", // Marca d'água para garantir que o cache da Vercel limpou
+                error: "V4_CACHE_LIMPADO", // NOVA MARCA D'ÁGUA
                 details: error?.message || String(error)
             }, 
             { status: 500 }

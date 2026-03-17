@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // <-- COMANDO CRÍTICO PARA MATAR O CACHE
+
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
@@ -45,10 +47,7 @@ export async function POST(req: Request) {
             transaction_amount: 120, // Forçado como Number absoluto
             description: body.description || 'Inscrição Encontro - Servo',
             payment_method_id: methodId,
-            payer: {
-                ...(body.payer || body.formData?.payer || body.paymentData?.payer || {}),
-                email: testUserEmail // Bypass total ativo
-            }
+            payer: { email: testUserEmail } // Substituição forçada do e-mail para liberar Sandbox
         };
 
         // Extração defensiva para cartões - garantida de bater em todas as rotas
@@ -74,7 +73,7 @@ export async function POST(req: Request) {
         const insertPayload = {
             tipo_inscricao: "SERVO",
             nome_completo: userData?.nome || "",
-            email: userData?.email || mpPayload.payer.email,
+            email: userData?.email || (body.email || body.payer?.email || body.paymentData?.payer?.email || testUserEmail),
             idade: userData?.idade ? parseInt(userData.idade) : null,
             sexo: userData?.sexo || null,
             funcao_igreja: userData?.funcao || null,
@@ -119,7 +118,7 @@ export async function POST(req: Request) {
         console.error("CATASTROFE NO BACKEND:", error);
         return NextResponse.json(
             { 
-                error: "V3_FALHA_SDK", // Marca d'água para garantir que o cache da Vercel limpou
+                error: "V4_CACHE_LIMPADO", // NOVA MARCA D'ÁGUA
                 details: error?.message || String(error)
             }, 
             { status: 500 }
