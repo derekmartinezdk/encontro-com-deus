@@ -1,29 +1,57 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        const { paymentData, ...userData } = body;
 
-        console.log("=== SALVANDO SERVO NO BANCO DE DADOS ===");
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+        const payment = new Payment(client);
 
-        // Mapeando para as colunas do banco de dados (Apenas campos de Servos + Sistema)
+        console.log("=== PROCESSANDO PAGAMENTO SERVO ===");
+
+        const paymentResponse = await payment.create({
+            body: {
+                transaction_amount: paymentData.transaction_amount,
+                token: paymentData.token,
+                description: 'Inscrição Servo - ENCONTRO COM DEUS',
+                installments: paymentData.installments,
+                payment_method_id: paymentData.payment_method_id,
+                issuer_id: paymentData.issuer_id,
+                payer: {
+                    email: paymentData.payer.email,
+                    identification: paymentData.payer.identification
+                }
+            }
+        });
+
         const insertPayload = {
             tipo_inscricao: "SERVO",
-            nome_completo: body.nome || "",
-            idade: body.idade ? parseInt(body.idade) : null,
-            sexo: body.sexo || null,
-            funcao_igreja: body.funcao || null,
-            rede: body.rede || null,
-            discipulador: body.discipulador || null,
-            fez_ctl: body.ctl || null,
-            fez_maturidade: body.maturidade || null,
-            // Campos de sistema / pagamento (de acordo com instruções)
-            txid: null,
+            nome_completo: userData.nome || "",
+            idade: userData.idade ? parseInt(userData.idade) : null,
+            sexo: userData.sexo || null,
+            funcao_igreja: userData.funcao || null,
+            rede: userData.rede || null,
+            discipulador: userData.discipulador || null,
+            fez_ctl: userData.ctl || null,
+            fez_maturidade: userData.maturidade || null,
+            txid: paymentResponse.id?.toString() || null,
             status_pagamento: "pendente",
-            qr_code: null,
-            valor: 120 // Valor oficial (R$ 120,00)
+            qr_code: paymentResponse.point_of_interaction?.transaction_data?.qr_code || null,
+            valor: 120
         };
+
+        if (paymentData.payment_method_id === 'pix') {
+            insertPayload.status_pagamento = 'pendente';
+        } else {
+            if (paymentResponse.status === 'approved') {
+                insertPayload.status_pagamento = 'pago';
+            } else {
+                return NextResponse.json({ error: 'Pagamento recusado', status: paymentResponse.status }, { status: 400 });
+            }
+        }
 
         const { data: dbData, error: dbError } = await supabase
             .from('inscricoes_servos')
@@ -36,62 +64,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Erro ao salvar inscrição no banco de dados', details: dbError }, { status: 500 });
         }
 
-        const servoId = dbData.id;
+        return NextResponse.json({ 
+            status: paymentResponse.status,
+            id: paymentResponse.id,
+            qr_code: paymentResponse.point_of_interaction?.transaction_data?.qr_code || null
+        }, { status: 200 });
 
-        // Faz a requisição nativa para a InfinitePay
-        console.log("Iniciando requisição para InfinitePay...");
-
-        const response = await fetch('https://api.infinitepay.io/invoices/public/checkout/links', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                handle: 'derekmartinezdk',
-                redirect_url: 'https://encontro-com-deus-eldorado-ibi.vercel.app/sucesso',
-                items: [
-                    {
-                        quantity: 1,
-                        price: 12000, // Preço oficial R$ 120,00
-                        description: 'Inscrição Servo - ENCONTRO COM DEUS'
-                    }
-                ],
-                // Passar o ID do pedido como metadata, caso a API suporte, ou gerar nosso txid
-                metadata: {
-                    id_inscricao: servoId,
-                    tipo: "SERVO"
-                }
-            })
-        });
-
-        const data = await response.json();
-
-        // Log para debug
-        console.log("Resposta bruta da InfinitePay:", JSON.stringify(data, null, 2));
-
-        if (!response.ok) {
-            console.error("Erro na InfinitePay:", data);
-            // Poderíamos deletar a linha no banco aqui, ou apenas marcar como erro
-            return NextResponse.json({ error: 'Erro ao gerar pagamento na InfinitePay', details: data }, { status: response.status });
-        }
-
-        // Obtém a URL do pagamento
-        const paymentUrl = data.url || data.link || (data.data && data.data.url) || null;
-
-        // Se a Infinite Pay retornar o ID da transação, atualizamos no banco
-        // Considerando que data.id seja o "txid" da InfinitePay
-        if (data.id) {
-            const { error: updateError } = await supabase
-                .from('inscricoes_servos')
-                .update({ txid: data.id })
-                .eq('id', servoId);
-
-            if (updateError) {
-                console.error("Erro ao atualizar txid no banco:", updateError);
-            }
-        }
-
-        return NextResponse.json({ init_point: paymentUrl }, { status: 200 });
     } catch (error) {
         console.error("Erro no servidor ao tentar processar checkout de servo:", error);
         return NextResponse.json({ error: 'Erro interno ao tentar processar checkout' }, { status: 500 });

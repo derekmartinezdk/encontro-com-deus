@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
 type InscriptionType = "ENCONTRISTA" | "SERVO" | null;
 
 const DISCIPULADORES = [
@@ -18,6 +19,10 @@ export default function InscricaoPage() {
     const [formData, setFormData] = useState<any>({});
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
+    }, []);
+
     const handleSelectType = (selectedType: InscriptionType) => {
         setType(selectedType);
         setFormData({}); // Limpar o formulário ao trocar o tipo
@@ -30,38 +35,39 @@ export default function InscricaoPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        if (type) {
+            localStorage.setItem("tipoInscricao", type);
+        }
+        setStep(3); // Avança para o pagamento (Brick)
+    };
 
-        try {
-            console.log("=== ENVIANDO DADOS PARA API ===");
-
-            // Guardar o tipo no localStorage para a página de sucesso saber qual variável de estado usar
-            if (type) {
-                localStorage.setItem("tipoInscricao", type);
-            }
-
-            // Define qual endpoint chamar com base no tipo
+    const handlePaymentSubmit = async (paymentFormData: any) => {
+        return new Promise<void>((resolve, reject) => {
             const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
-
-            const res = await fetch(endpoint, {
+            
+            fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, type }), // Enviando type caso necessário
+                body: JSON.stringify({ ...formData, type, paymentData: paymentFormData }),
+            })
+            .then(async (res) => {
+                const data = await res.json();
+                if (res.ok && !data.error) {
+                    resolve();
+                    // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
+                    if (data.status === 'approved') {
+                        setTimeout(() => window.location.href = "/sucesso", 2000);
+                    }
+                    // Se for PIX, o Brick cuida de exibir o QR Code em tela e aguardar
+                } else {
+                    reject();
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                reject();
             });
-
-            const data = await res.json();
-
-            if (data.init_point) {
-                window.location.href = data.init_point;
-            } else {
-                alert("Erro ao redirecionar para o pagamento: " + JSON.stringify(data));
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error("Erro no formulário:", error);
-            alert("Erro ao enviar formulário. Tente novamente.");
-            setLoading(false);
-        }
+        });
     };
 
     return (
@@ -73,14 +79,19 @@ export default function InscricaoPage() {
 
                     {/* Indicador de Passos */}
                     <div className="mb-8 flex justify-center items-center gap-4 text-sm font-semibold">
-                        <div className={`flex items-center gap-2 ${step === 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-                            <span className={`w-8 h-8 flex items-center justify-center rounded-full ${step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>1</span>
-                            <span>Escolha o Tipo</span>
+                        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <span className={`w-8 h-8 flex items-center justify-center rounded-full ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>1</span>
+                            <span className="hidden sm:inline">Escolha</span>
                         </div>
-                        <div className="w-12 h-0.5 bg-gray-200"></div>
-                        <div className={`flex items-center gap-2 ${step === 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-                            <span className={`w-8 h-8 flex items-center justify-center rounded-full ${step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>2</span>
-                            <span>Seus Dados</span>
+                        <div className={`w-8 sm:w-12 h-0.5 ${(step >= 2) ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <span className={`w-8 h-8 flex items-center justify-center rounded-full ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>2</span>
+                            <span className="hidden sm:inline">Seus Dados</span>
+                        </div>
+                        <div className={`w-8 sm:w-12 h-0.5 ${(step === 3) ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        <div className={`flex items-center gap-2 ${step === 3 ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <span className={`w-8 h-8 flex items-center justify-center rounded-full ${step === 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>3</span>
+                            <span className="hidden sm:inline">Pagamento</span>
                         </div>
                     </div>
 
@@ -313,19 +324,37 @@ export default function InscricaoPage() {
                                 )}
 
                                 <div className="pt-6 border-t mt-8">
-                                    <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-blue-600/30 text-lg flex items-center justify-center gap-2">
-                                        {loading ? (
-                                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        ) : (
-                                            "Ir para o Pagamento (R$ 120,00)"
-                                        )}
+                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-blue-600/30 text-lg flex items-center justify-center gap-2">
+                                        Ir para o Pagamento (R$ 120,00)
                                     </button>
                                 </div>
 
                             </form>
+                        </div>
+                    )}
+
+                    {step === 3 && type && (
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-10 fade-in w-full max-w-2xl mx-auto">
+                            <div className="flex items-center gap-4 mb-8 border-b pb-6">
+                                <button onClick={() => setStep(2)} className="text-gray-400 hover:text-gray-700 transition-colors p-2 -ml-2 rounded-full hover:bg-gray-100">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                </button>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Pagamento da Inscrição</h2>
+                                    <p className="text-gray-500 text-sm">Escolha PIX ou Cartão de Crédito</p>
+                                </div>
+                            </div>
+                            
+                            <Payment
+                                initialization={{ amount: 120 }}
+                                customization={{
+                                    paymentMethods: {
+                                        pix: "all",
+                                        creditCard: "all",
+                                    },
+                                }}
+                                onSubmit={handlePaymentSubmit}
+                            />
                         </div>
                     )}
 

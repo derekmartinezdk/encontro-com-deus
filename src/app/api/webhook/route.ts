@@ -1,45 +1,38 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log("=== WEBHOOK RECEBIDO ===", JSON.stringify(body, null, 2));
+        console.log("=== WEBHOOK MERCADO PAGO RECEBIDO ===", JSON.stringify(body, null, 2));
 
-        // Extrai o identificador da transação e do status do payload
-        // Cobrimos as estruturas mais comuns de webhooks de pagamento (como InfinitePay, etc)
-        const txid = body.id || body.payment?.id || body.data?.id || body.resource?.id;
-        const status = body.status || body.payment?.status || body.data?.status || 'pago';
+        // Pela documentação do MP, recebemos action='payment.updated' e data.id
+        const action = body.action || body.topic;
+        const paymentId = body.data?.id || body.resource;
 
-        if (!txid) {
-            console.warn("Nenhum txid ou id encontrado no webhook.");
-            // Retorna 200 para evitar que o gateway fique repolling
-            return NextResponse.json({ message: 'Webhook ignorado (sem txid)' }, { status: 200 });
+        if (!paymentId || (action !== 'payment.updated' && action !== 'payment.created')) {
+            console.warn("Webhook ignorado: Formato não reconhecido ou irrelevante.");
+            return NextResponse.json({ message: 'Ignorado' }, { status: 200 });
         }
 
-        // Mapeando o status recebido para o nosso padrão de banco de dados
+        // Consultando o status atual na API do Mercado Pago por segurança
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+        const payment = new Payment(client);
+        
+        const paymentInfo = await payment.get({ id: paymentId });
+        const status = paymentInfo.status;
+
+        console.log(`Verificando pagamento ${paymentId}. Status: ${status}`);
+
         let statusParaSalvar = 'pendente';
-        if (typeof status === 'string') {
-            const s = status.toLowerCase();
-            // Status comuns que indicam sucesso
-            if (s === 'paid' || s === 'approved' || s === 'pago' || s === 'aprovado' || s === 'settled') {
-                statusParaSalvar = 'pago';
-            } 
-            // Status comuns de recusa/cancelamento
-            else if (s === 'refused' || s === 'declined' || s === 'canceled' || s === 'cancelled' || s === 'expired' || s === 'cancelado') {
-                statusParaSalvar = 'cancelado';
-            } 
-            // Status pendente/processando
-            else if (s === 'processing' || s === 'pending' || s === 'pendente') {
-                statusParaSalvar = 'pendente';
-            } 
-            // Fallback (salvar o que vier se desconhecido)
-            else {
-                statusParaSalvar = status;
-            }
+        if (status === 'approved') {
+            statusParaSalvar = 'pago';
+        } else if (status === 'rejected' || status === 'cancelled') {
+            statusParaSalvar = 'cancelado';
         }
 
-        console.log(`Processando webhook para txid: ${txid} | Novo Status: ${statusParaSalvar}`);
+        const txid = paymentId.toString();
 
         // 1. Tenta atualizar na tabela de Encontristas
         const { data: updateInscricoes, error: errorInscricoes } = await supabase
@@ -72,16 +65,13 @@ export async function POST(request: Request) {
         }
 
         if (!foiAtualizado) {
-            console.warn(`[Aviso] Nenhum registro encontrado com o txid: ${txid} nas tabelas de inscricoes e inscricoes_servos.`);
+            console.warn(`[Aviso] Nenhum registro encontrado com o txid: ${txid}.`);
         }
 
-        // Sempre retornar 200 OK imediato para que o gateway saiba que foi recebido com sucesso
-        return NextResponse.json({ success: true, message: 'Recebido com sucesso' }, { status: 200 });
+        return NextResponse.json({ success: true }, { status: 200 });
 
     } catch (error) {
         console.error("Erro interno ao processar webhook:", error);
-        // Continua retornando um status 200 / ou deixamos dar erro pro gateway retentar
-        // A especificação pede HTTP 200 imediato
-        return NextResponse.json({ success: false, message: 'Erro interno, mas recebido' }, { status: 200 });
+        return NextResponse.json({ success: false, message: 'Erro interno' }, { status: 200 });
     }
 }

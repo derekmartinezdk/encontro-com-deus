@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        const { paymentData, ...userData } = body;
 
         let calculatedIdade = null;
-        if (body.dataNascimento) {
-            const birthDate = new Date(body.dataNascimento);
+        if (userData.dataNascimento) {
+            const birthDate = new Date(userData.dataNascimento);
             const today = new Date();
             let age = today.getFullYear() - birthDate.getFullYear();
             const m = today.getMonth() - birthDate.getMonth();
@@ -17,29 +19,57 @@ export async function POST(request: Request) {
             calculatedIdade = age;
         }
 
-        console.log("=== SALVANDO ENCONTRISTA NO BANCO DE DADOS ===");
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+        const payment = new Payment(client);
 
-        // Mapeando para as colunas do banco de dados
+        console.log("=== PROCESSANDO PAGAMENTO ENCONTRISTA ===");
+
+        const paymentResponse = await payment.create({
+            body: {
+                transaction_amount: paymentData.transaction_amount,
+                token: paymentData.token,
+                description: 'Inscrição Encontrista - ENCONTRO COM DEUS',
+                installments: paymentData.installments,
+                payment_method_id: paymentData.payment_method_id,
+                issuer_id: paymentData.issuer_id,
+                payer: {
+                    email: paymentData.payer.email,
+                    identification: paymentData.payer.identification
+                }
+            }
+        });
+
         const insertPayload = {
-            tipo_inscricao: "ENCONTRISTA", // Forçando ENCONTRISTA nesta rota
-            nome_completo: body.nome || "",
-            idade: calculatedIdade, // Calculada automaticamente
-            sexo: body.sexo || null,
-            discipulador: body.discipulador || null,
-            rede: body.rede || null,
-            data_nascimento: body.dataNascimento || null,
-            celular: body.celular || null,
-            endereco: body.endereco || null,
-            lider_celula: body.liderCelula || null,
-            estado_civil: body.estadoCivil || null,
-            deficiencia_fisica: body.deficienciaFisica || null,
-            uso_medicamento: body.medicamento || null, // alterado de medicamento para uso_medicamento para adequar ao schema
-            contato_emergencia: body.emergencia || null,
-            txid: null,
+            tipo_inscricao: "ENCONTRISTA", 
+            nome_completo: userData.nome || "",
+            idade: calculatedIdade,
+            sexo: userData.sexo || null,
+            discipulador: userData.discipulador || null,
+            rede: userData.rede || null,
+            data_nascimento: userData.dataNascimento || null,
+            celular: userData.celular || null,
+            endereco: userData.endereco || null,
+            lider_celula: userData.liderCelula || null,
+            estado_civil: userData.estadoCivil || null,
+            deficiencia_fisica: userData.deficienciaFisica || null,
+            uso_medicamento: userData.medicamento || null,
+            contato_emergencia: userData.emergencia || null,
+            txid: paymentResponse.id?.toString() || null,
             status_pagamento: "pendente",
-            qr_code: null,
+            qr_code: paymentResponse.point_of_interaction?.transaction_data?.qr_code || null,
             valor: 120
         };
+
+        if (paymentData.payment_method_id === 'pix') {
+            insertPayload.status_pagamento = 'pendente';
+        } else {
+            if (paymentResponse.status === 'approved') {
+                insertPayload.status_pagamento = 'pago';
+            } else {
+                // Não salva no banco se o cartão foi recusado
+                return NextResponse.json({ error: 'Pagamento recusado', status: paymentResponse.status }, { status: 400 });
+            }
+        }
 
         const { data: dbData, error: dbError } = await supabase
             .from('inscricoes')
@@ -52,60 +82,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Erro ao salvar inscrição no banco de dados', details: dbError }, { status: 500 });
         }
 
-        const inscricaoId = dbData.id;
+        return NextResponse.json({ 
+            status: paymentResponse.status,
+            id: paymentResponse.id,
+            qr_code: paymentResponse.point_of_interaction?.transaction_data?.qr_code || null
+        }, { status: 200 });
 
-        // Faz a requisição nativa para a InfinitePay
-        console.log("Iniciando requisição para InfinitePay...");
-
-        const response = await fetch('https://api.infinitepay.io/invoices/public/checkout/links', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                handle: 'derekmartinezdk',
-                redirect_url: 'https://encontro-com-deus-eldorado-ibi.vercel.app/sucesso',
-                items: [
-                    {
-                        quantity: 1,
-                        price: 12000, // Preço oficial R$ 120,00
-                        description: 'Inscrição Encontrista - ENCONTRO COM DEUS'
-                    }
-                ],
-                metadata: {
-                    id_inscricao: inscricaoId,
-                    tipo: "ENCONTRISTA"
-                }
-            })
-        });
-
-        const data = await response.json();
-
-        // Log para debug
-        console.log("Resposta bruta da InfinitePay:", JSON.stringify(data, null, 2));
-
-        if (!response.ok) {
-            console.error("Erro na InfinitePay:", data);
-            return NextResponse.json({ error: 'Erro ao gerar pagamento na InfinitePay', details: data }, { status: response.status });
-        }
-
-        const paymentUrl = data.url || data.link || (data.data && data.data.url) || null;
-
-        // Se a Infinite Pay retornar o ID da transação, atualizamos no banco
-        if (data.id) {
-            const { error: updateError } = await supabase
-                .from('inscricoes')
-                .update({ txid: data.id })
-                .eq('id', inscricaoId);
-
-            if (updateError) {
-                console.error("Erro ao atualizar txid no banco:", updateError);
-            }
-        }
-
-        return NextResponse.json({ init_point: paymentUrl }, { status: 200 });
     } catch (error) {
-        console.error("Erro no servidor ao tentar gerar checkout:", error);
+        console.error("Erro no servidor ao tentar processar checkout:", error);
         return NextResponse.json({ error: 'Erro interno ao tentar processar checkout' }, { status: 500 });
     }
 }
