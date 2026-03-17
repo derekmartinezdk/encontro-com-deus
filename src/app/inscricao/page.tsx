@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
@@ -19,6 +19,21 @@ export default function InscricaoPage() {
     const [formData, setFormData] = useState<any>({});
     const [loading, setLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+
+    const initialization = useMemo(() => ({
+        amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
+        payer: {
+            // Fallback obrigatório para o MP não renderizar o input de e-mail na tela
+            email: formData?.email || "inscricao@igreja.com", 
+        }
+    }), [formData?.email]);
+
+    const customization = useMemo(() => ({
+        paymentMethods: {
+            bankTransfer: "all" as const,
+            creditCard: "all" as const,
+        },
+    }), []);
 
     useEffect(() => {
         // Hardcode da chave pública para contornar falha de injeção de env na Vercel
@@ -352,18 +367,8 @@ export default function InscricaoPage() {
                             
                             {isMounted ? (
                                 <Payment
-                                    initialization={{
-                                        amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
-                                        payer: {
-                                            email: formData.email || "", 
-                                        }
-                                    }}
-                                    customization={{
-                                        paymentMethods: {
-                                            bankTransfer: "all",
-                                            creditCard: "all",
-                                        },
-                                    }}
+                                    initialization={initialization}
+                                    customization={customization}
                                     onSubmit={handlePaymentSubmit}
                                 />
                             ) : (
