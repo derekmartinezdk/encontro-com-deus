@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
-import { initMercadoPago } from '@mercadopago/sdk-react';
 import dynamic from 'next/dynamic';
 
-const Payment = dynamic(() => import('@mercadopago/sdk-react').then(mod => mod.Payment), { ssr: false });
-
-initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
+const PaymentBrick = dynamic(() => import('./PaymentBrickWrapper'), { ssr: false });
 
 type Step = 1 | 2 | 3;
 type InscriptionType = "ENCONTRISTA" | "SERVO" | null;
@@ -346,8 +343,7 @@ export default function InscricaoPage() {
                                     <p className="text-gray-500 text-sm">Escolha PIX ou Cartão de Crédito</p>
                                 </div>
                             </div>
-                            
-                            <Payment
+                            <PaymentBrick
                                 initialization={{ amount: 120 }}
                                 customization={{
                                     paymentMethods: {
