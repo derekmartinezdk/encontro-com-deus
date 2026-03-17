@@ -21,7 +21,9 @@ export default function InscricaoPage() {
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
+        // Hardcode da chave pública para contornar falha de injeção de env na Vercel
+        const publicKey = "APP_USR-7c7096e2-d1d9-4280-8925-ae13645777c0"; 
+        initMercadoPago(publicKey, { locale: 'pt-BR' });
         setIsMounted(true);
     }, []);
 
