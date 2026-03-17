@@ -23,8 +23,7 @@ export default function InscricaoPage() {
     const initialization = useMemo(() => ({
         amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
         payer: {
-            // Fallback obrigatório para o MP não renderizar o input de e-mail na tela
-            email: formData?.email || "inscricao@igreja.com", 
+            email: formData.email, 
         }
     }), [formData?.email]);
 

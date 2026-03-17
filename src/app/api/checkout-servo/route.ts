@@ -12,24 +12,31 @@ export async function POST(request: Request) {
 
         console.log("=== PROCESSANDO PAGAMENTO SERVO ===");
 
-        const paymentResponse = await payment.create({
-            body: {
-                transaction_amount: paymentData.transaction_amount,
-                token: paymentData.token,
-                description: 'Inscrição Servo - ENCONTRO COM DEUS',
-                installments: paymentData.installments,
-                payment_method_id: paymentData.payment_method_id,
-                issuer_id: paymentData.issuer_id,
-                payer: {
-                    email: paymentData.payer.email,
-                    identification: paymentData.payer.identification
+        let paymentResponse;
+        try {
+            paymentResponse = await payment.create({
+                body: {
+                    transaction_amount: Number(paymentData.transaction_amount || 120),
+                    description: paymentData.description || 'Inscrição Encontro - Servo',
+                    installments: paymentData.installments,
+                    payment_method_id: paymentData.payment_method_id,
+                    issuer_id: paymentData.issuer_id,
+                    token: paymentData.token, // se for cartao de credito
+                    payer: {
+                        ...paymentData.payer,
+                        email: paymentData.payer?.email || userData.email, // Pega o e-mail real enviado do form
+                    }
                 }
-            }
-        });
+            });
+        } catch (mpError) {
+            console.error("Erro ao criar pagamento no MercadoPago:", mpError);
+            return NextResponse.json({ error: 'Falha gravíssima ao registrar requisição na provedora (Mercado Pago)', details: mpError }, { status: 500 });
+        }
 
         const insertPayload = {
             tipo_inscricao: "SERVO",
             nome_completo: userData.nome || "",
+            email: userData.email || null,
             idade: userData.idade ? parseInt(userData.idade) : null,
             sexo: userData.sexo || null,
             funcao_igreja: userData.funcao || null,
