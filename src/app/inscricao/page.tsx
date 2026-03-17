@@ -161,6 +161,7 @@ export default function InscricaoPage() {
                                                 <option className="text-gray-900" value="">Selecione...</option>
                                                 <option className="text-gray-900" value="Discipulador">Discipulador(a)</option>
                                                 <option className="text-gray-900" value="Lider">Líder</option>
+                                                <option className="text-gray-900" value="Lider RKids">Líder RKids</option>
                                                 <option className="text-gray-900" value="Lider_Treinamento">Líder em Treinamento</option>
                                                 <option className="text-gray-900" value="Membro">Membro</option>
                                             </select>
