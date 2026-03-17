@@ -20,20 +20,6 @@ export default function InscricaoPage() {
     const [loading, setLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
-    const initialization = useMemo(() => ({
-        amount: 120, // OBRIGATÓRIO: Forçar como número para os iframes carregarem
-        payer: {
-            email: formData?.email || "pagador@teste.com", 
-        }
-    }), [formData?.email]);
-
-    const customization = useMemo(() => ({
-        paymentMethods: {
-            bankTransfer: "all" as const,
-            creditCard: "all" as const,
-        },
-    }), []);
-
     useEffect(() => {
         // Hardcode da chave pública para contornar falha de injeção de env na Vercel
         const publicKey = "APP_USR-7c7096e2-d1d9-4280-8925-ae13645777c0"; 
@@ -397,10 +383,21 @@ export default function InscricaoPage() {
                                 </div>
                             </div>
                             
-                            {isMounted ? (
+                            {isMounted && (!formData?.email || !formData.email.includes('@')) ? (
+                                <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    <p className="text-gray-600">Carregando ambiente seguro (validando credenciais)...</p>
+                                </div>
+                            ) : isMounted ? (
                                 <Payment
-                                    initialization={initialization}
-                                    customization={customization}
+                                    key={`mp-brick-${formData.email}`}
+                                    initialization={{
+                                        amount: 120,
+                                        payer: { email: formData.email }
+                                    }}
+                                    customization={{
+                                        paymentMethods: { bankTransfer: 'all' as const, creditCard: 'all' as const }
+                                    }}
                                     onSubmit={handlePaymentSubmit}
                                 />
                             ) : (
