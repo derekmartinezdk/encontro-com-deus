@@ -12,6 +12,14 @@ export async function POST(request: Request) {
 
         console.log("=== PROCESSANDO PAGAMENTO SERVO ===");
 
+        const finalPayerEmail = body.email || body.payer?.email;
+        
+        // Trava de segurança no backend antes de enviar pro MP
+        if (!finalPayerEmail) {
+            console.error("FALHA DE PAYLOAD: E-mail não chegou no backend");
+            return NextResponse.json({ error: "E-mail do pagador é obrigatório" }, { status: 400 });
+        }
+
         let paymentResponse;
         try {
             paymentResponse = await payment.create({
@@ -23,8 +31,8 @@ export async function POST(request: Request) {
                     issuer_id: paymentData.issuer_id,
                     token: paymentData.token, // se for cartao de credito
                     payer: {
-                        ...paymentData.payer,
-                        email: paymentData.payer?.email || userData.email, // Pega o e-mail real enviado do form
+                        ...(paymentData.payer || {}), // O spread DEVE vir primeiro
+                        email: finalPayerEmail, // A atribuição explícita vem DEPOIS para não ser sobrescrita
                     }
                 }
             });

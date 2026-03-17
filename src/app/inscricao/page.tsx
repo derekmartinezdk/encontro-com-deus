@@ -67,7 +67,12 @@ export default function InscricaoPage() {
                 const response = await fetch(endpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ...formData, type, paymentData: paymentFormData }),
+                    body: JSON.stringify({ 
+                        ...formData, 
+                        type, 
+                        email: formData.email, // Garante injecao explicita
+                        paymentData: paymentFormData 
+                    }),
                 });
 
                 if (!response.ok) {
