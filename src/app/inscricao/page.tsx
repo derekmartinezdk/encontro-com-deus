@@ -336,6 +336,7 @@ export default function InscricaoPage() {
 
                     {step === 3 && type && (
                         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-10 fade-in w-full max-w-2xl mx-auto">
+                            {/* O SDK Bricks está apenas montado; nenhum fetch interno bloqueia a renderização */}
                             <div className="flex items-center gap-4 mb-8 border-b pb-6">
                                 <button onClick={() => setStep(2)} className="text-gray-400 hover:text-gray-700 transition-colors p-2 -ml-2 rounded-full hover:bg-gray-100">
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
