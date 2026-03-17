@@ -45,18 +45,21 @@ export default function InscricaoPage() {
         setStep(3); // Avança para o pagamento (Brick)
     };
 
-    const handlePaymentSubmit = async (paymentFormData: any) => {
+    const handlePaymentSubmit = async (brickResponse: any) => {
         return new Promise<void>(async (resolve, reject) => {
             try {
                 const endpoint = type === "SERVO" ? "/api/checkout-servo" : "/api/checkout";
 
+                // Extração profunda: O MP Brick costuma encapsular tudo em formData
+                const extractedData = brickResponse.formData || brickResponse;
+
                 // 1. CLONAR E INJETAR O EMAIL FORÇADAMENTE
                 const payloadCompletoMP = {
-                    ...paymentFormData,
+                    ...extractedData, // Agora sim espalhamos os dados reais na raiz
                     transaction_amount: 120, // Garante que o SDK do MP não perca o valor numérico
                     email: formData.email, // Garante na raiz
                     payer: {
-                        ...(paymentFormData.payer || {}),
+                        ...(extractedData.payer || {}),
                         email: formData.email // Garante dentro do objeto payer do MP
                     }
                 };

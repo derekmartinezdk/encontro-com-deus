@@ -39,24 +39,36 @@ export async function POST(req: Request) {
 
         console.log("=== PROCESSANDO PAGAMENTO ENCONTRISTA ===");
 
-        // 1. DESEMPACOTAMENTO CORRETO DO PAYLOAD DO BRICK
-        const brickData = body.paymentData || body;
+        // LOG SALVADOR: Ajuda a descobrir a árvore de objetos do Brick em tempo de execução
+        console.log("PAYLOAD RECEBIDO DO FRONTEND (ENCONTRISTA):", JSON.stringify(body, null, 2));
 
-        // 2. MONTAGEM DO PAYLOAD LENDO DE 'brickData'
+        // Busca em todas as possíveis sub-camadas vindas do React Payload
+        const methodId = body.payment_method_id || body.formData?.payment_method_id || body.paymentData?.payment_method_id;
+
+        if (!methodId) {
+            return NextResponse.json({ error: "FALHA GRAVE: payment_method_id indisponível.", bodyRecebido: body }, { status: 400 });
+        }
+
+        // 2. MONTAGEM DO PAYLOAD LENDO DE 'body'
         const mpPayload: any = {
             transaction_amount: 120, // Forçado
             description: body.description || 'Inscrição Encontrista - ENCONTRO COM DEUS',
-            payment_method_id: brickData.payment_method_id,
+            payment_method_id: methodId,
             payer: {
-                ...(brickData.payer || {}),
-                email: body.email || brickData.payer?.email || 'fallback@encontro.com'
+                ...(body.payer || body.formData?.payer || body.paymentData?.payer || {}),
+                email: body.email || body.payer?.email || body.paymentData?.payer?.email || 'fallback@encontro.com'
             }
         };
 
-        // Se for cartão, extrai os dados adicionais do brickData
-        if (brickData.token) mpPayload.token = brickData.token;
-        if (brickData.installments) mpPayload.installments = Number(brickData.installments);
-        if (brickData.issuer_id) mpPayload.issuer_id = String(brickData.issuer_id);
+        // Extração defensiva para cartões - garantida de bater em todas as rotas
+        const tokenVal = body.token || body.formData?.token || body.paymentData?.token;
+        if (tokenVal) mpPayload.token = tokenVal;
+        
+        const instVal = body.installments || body.formData?.installments || body.paymentData?.installments;
+        if (instVal) mpPayload.installments = Number(instVal);
+
+        const issuerVal = body.issuer_id || body.formData?.issuer_id || body.paymentData?.issuer_id;
+        if (issuerVal) mpPayload.issuer_id = String(issuerVal);
 
         let paymentResponse;
         try {
@@ -89,7 +101,7 @@ export async function POST(req: Request) {
             valor: 120
         };
 
-        if (brickData.payment_method_id === 'pix') {
+        if (methodId === 'pix') {
             insertPayload.status_pagamento = 'pendente';
         } else {
             if (paymentResponse.status === 'approved') {
