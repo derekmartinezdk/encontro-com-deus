@@ -8,6 +8,8 @@ import dynamic from 'next/dynamic';
 
 const Payment = dynamic(() => import('@mercadopago/sdk-react').then(mod => mod.Payment), { ssr: false });
 
+initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
+
 type Step = 1 | 2 | 3;
 type InscriptionType = "ENCONTRISTA" | "SERVO" | null;
 
@@ -21,10 +23,6 @@ export default function InscricaoPage() {
     const [type, setType] = useState<InscriptionType>(null);
     const [formData, setFormData] = useState<any>({});
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string, { locale: 'pt-BR' });
-    }, []);
 
     const handleSelectType = (selectedType: InscriptionType) => {
         setType(selectedType);
