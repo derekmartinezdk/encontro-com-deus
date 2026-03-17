@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+import { initMercadoPago } from '@mercadopago/sdk-react';
+import dynamic from 'next/dynamic';
+
+const Payment = dynamic(() => import('@mercadopago/sdk-react').then(mod => mod.Payment), { ssr: false });
 
 type Step = 1 | 2 | 3;
 type InscriptionType = "ENCONTRISTA" | "SERVO" | null;
