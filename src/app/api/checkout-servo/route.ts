@@ -20,8 +20,8 @@ export async function POST(req: Request) {
         
         const { paymentData, ...userData } = body;
 
-        // 1. INICIALIZAÇÃO CORRETA E NO ESCOPO (Resolve 'client is not defined')
-        const accessToken = process.env.MP_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+        // HARDCODE DO TOKEN DE ACESSO PARA BYPASSAR O BUG DE ENV DA VERCEL
+        const accessToken = "APP_USR-3336896594577234-022016-3c713859990d08a367c6841de6b140c8-3215951193";
         const client = new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } });
         const payment = new Payment(client);
 
