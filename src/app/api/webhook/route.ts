@@ -1,77 +1,59 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { createClient } from '@supabase/supabase-js';
 
-export async function POST(request: Request) {
-    try {
-        const body = await request.json();
-        console.log("=== WEBHOOK MERCADO PAGO RECEBIDO ===", JSON.stringify(body, null, 2));
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-        // Pela documentação do MP, recebemos action='payment.updated' e data.id
-        const action = body.action || body.topic;
-        const paymentId = body.data?.id || body.resource;
-
-        if (!paymentId || (action !== 'payment.updated' && action !== 'payment.created')) {
-            console.warn("Webhook ignorado: Formato não reconhecido ou irrelevante.");
-            return NextResponse.json({ message: 'Ignorado' }, { status: 200 });
-        }
-
-        // Consultando o status atual na API do Mercado Pago por segurança
-        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
-        const payment = new Payment(client);
-        
-        const paymentInfo = await payment.get({ id: paymentId });
-        const status = paymentInfo.status;
-
-        console.log(`Verificando pagamento ${paymentId}. Status: ${status}`);
-
-        let statusParaSalvar = 'pendente';
-        if (status === 'approved') {
-            statusParaSalvar = 'pago';
-        } else if (status === 'rejected' || status === 'cancelled') {
-            statusParaSalvar = 'cancelado';
-        }
-
-        const txid = paymentId.toString();
-
-        // 1. Tenta atualizar na tabela de Encontristas
-        const { data: updateInscricoes, error: errorInscricoes } = await supabase
-            .from('inscricoes')
-            .update({ status_pagamento: statusParaSalvar })
-            .eq('txid', txid)
-            .select();
-
-        let foiAtualizado = false;
-
-        if (!errorInscricoes && updateInscricoes && updateInscricoes.length > 0) {
-            console.log(`[Sucesso] Inscrição Encontrista (txid: ${txid}) atualizada para ${statusParaSalvar}!`);
-            foiAtualizado = true;
-        }
-
-        // 2. Se não encontrou na tabela inscricoes, tenta na tabela inscricoes_servos
-        if (!foiAtualizado) {
-            const { data: updateServos, error: errorServos } = await supabase
-                .from('inscricoes_servos')
-                .update({ status_pagamento: statusParaSalvar })
-                .eq('txid', txid)
-                .select();
-
-            if (!errorServos && updateServos && updateServos.length > 0) {
-                console.log(`[Sucesso] Inscrição Servo (txid: ${txid}) atualizada para ${statusParaSalvar}!`);
-                foiAtualizado = true;
-            } else if (errorServos) {
-                console.error("Erro ao tentar atualizar tabela inscricoes_servos:", errorServos);
-            }
-        }
-
-        if (!foiAtualizado) {
-            console.warn(`[Aviso] Nenhum registro encontrado com o txid: ${txid}.`);
-        }
-
-        return NextResponse.json({ success: true }, { status: 200 });
-
-    } catch (error) {
-        console.error("Erro interno ao processar webhook:", error);
-        return NextResponse.json({ success: false, message: 'Erro interno' }, { status: 200 });
+    // O Mercado Pago exige que retornemos 200 OK rapidamente. 
+    // Ignora qualquer evento que não seja notificação de pagamento.
+    if (body.type !== 'payment' || !body.data?.id) {
+      return NextResponse.json({ message: "Evento ignorado" }, { status: 200 });
     }
+
+    // 1. CHAMA O MERCADO PAGO PARA VERIFICAR A VERACIDADE DO PAGAMENTO (Segurança)
+    const accessToken = process.env.MP_ACCESS_TOKEN || "TEST-7398472344012829-031717-871a9f9740d68277590af0ea764b1b99-140768825";
+    const client = new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } });
+    const payment = new Payment(client);
+    
+    const paymentData = await payment.get({ id: body.data.id });
+    
+    const status = paymentData.status; // ex: 'approved', 'pending', 'rejected'
+    const payerEmail = paymentData.payer?.email;
+
+    if (!payerEmail) {
+      console.error("Webhook: E-mail não encontrado no pagamento", body.data.id);
+      return NextResponse.json({ message: "Sem email" }, { status: 200 });
+    }
+
+    // 2. ATUALIZA O SUPABASE
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''; // Idealmente usar Service Role em APIs
+    
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Atualiza a tabela de servos (Altere 'inscricoes_servos' e 'status_pagamento' se os nomes das colunas forem diferentes no seu DB)
+      const { error } = await supabase
+        .from('inscricoes_servos')
+        .update({ status_pagamento: status }) // Coluna que guarda se tá pago ou não
+        .eq('email', payerEmail); 
+
+      if (error) {
+        console.error("Erro ao atualizar Supabase via Webhook:", error);
+      } else {
+        console.log(`Webhook: Status do e-mail ${payerEmail} atualizado para ${status} no Supabase.`);
+      }
+    } else {
+      console.warn("Supabase Keys ausentes no ENV. Webhook processado mas DB não atualizado.");
+    }
+
+    // Sempre retornar 200 pro MP parar de enviar a notificação repetida
+    return NextResponse.json({ success: true }, { status: 200 });
+
+  } catch (error: any) {
+    console.error("Erro fatal no Webhook:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
