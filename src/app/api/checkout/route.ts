@@ -52,14 +52,16 @@ export async function POST(req: Request) {
         }
 
         // 2. MONTAGEM DO PAYLOAD LENDO DE 'body'
+        const payerEmail = body.email || body.payer?.email || 'sandbox@teste.com';
         const mpPayload: any = {
             transaction_amount: 120, // Forçado
             description: body.description || 'Inscrição Encontrista - ENCONTRO COM DEUS',
             payment_method_id: methodId,
             payer: {
                 ...(body.payer || body.formData?.payer || body.paymentData?.payer || {}),
-                email: body.email || body.payer?.email || 'sandbox@teste.com'
-            }
+                email: payerEmail
+            },
+            additional_info: { payer: { first_name: payerEmail } } // Hack para persistir email em rejects
         };
 
         // Extração defensiva para cartões - garantida de bater em todas as rotas

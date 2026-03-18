@@ -19,11 +19,17 @@ export async function POST(req: Request) {
     
     const paymentData = await payment.get({ id: body.data.id });
     
-    const status = paymentData.status; // ex: 'approved', 'pending', 'rejected'
-    const payerEmail = paymentData.payer?.email;
+    const status = paymentData.status; 
+    
+    // Extração Agressiva do E-mail
+    const payerEmail = 
+      paymentData.payer?.email || 
+      paymentData.additional_info?.payer?.first_name || 
+      (paymentData.metadata && paymentData.metadata.email) || null;
 
     if (!payerEmail) {
-      console.error("Webhook: E-mail não encontrado no pagamento", body.data.id);
+      // LOG SALVADOR: Se não achar, imprime o objeto inteiro para debugar
+      console.error(`Webhook - Falha ao extrair e-mail do pagamento ${body.data.id}. Payload MP:`, JSON.stringify(paymentData, null, 2));
       return NextResponse.json({ message: "Sem email" }, { status: 200 });
     }
 
