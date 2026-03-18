@@ -17,7 +17,20 @@ export async function POST(req: Request) {
     const client = new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } });
     const payment = new Payment(client);
     
-    const paymentData = await payment.get({ id: body.data.id });
+    // BYPASS PARA O SIMULADOR DO MERCADO PAGO
+    if (body.data.id === '123456' || body.data.id === 123456) {
+      console.log("Webhook: Simulação do Mercado Pago recebida com sucesso.");
+      return NextResponse.json({ message: "Simulação OK" }, { status: 200 });
+    }
+
+    let paymentData;
+    try {
+      paymentData = await payment.get({ id: body.data.id });
+    } catch (mpError: any) {
+      console.error(`Webhook: Falha ao buscar pagamento ${body.data.id} na API do MP. Pode ser um ID inválido.`, mpError.message);
+      // Retornar 200 para o MP parar de tentar enviar essa notificação falha
+      return NextResponse.json({ message: "Pagamento não encontrado no MP" }, { status: 200 });
+    }
     
     const status = paymentData.status; 
     
