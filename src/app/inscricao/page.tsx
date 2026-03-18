@@ -21,8 +21,8 @@ export default function InscricaoPage() {
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        // Hardcode da chave pública para contornar falha de injeção de env na Vercel
-        const publicKey = "APP_USR-7c7096e2-d1d9-4280-8925-ae13645777c0"; 
+        // NOVA CHAVE PÚBLICA DE SANDBOX
+        const publicKey = "TEST-df2df97d-f14a-4518-ada7-4be0e6b64d47"; 
         initMercadoPago(publicKey, { locale: 'pt-BR' });
         setIsMounted(true);
     }, []);

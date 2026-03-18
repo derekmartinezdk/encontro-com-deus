@@ -34,8 +34,8 @@ export async function POST(req: Request) {
             calculatedIdade = age;
         }
 
-        // HARDCODE DO TOKEN DE ACESSO PARA BYPASSAR O BUG DE ENV DA VERCEL
-        const accessToken = "APP_USR-3336896594577234-022016-3c713859990d08a367c6841de6b140c8-3215951193";
+        // NOVO ACCESS TOKEN DE SANDBOX
+        const accessToken = "TEST-7398472344012829-031717-871a9f9740d68277590af0ea764b1b99-140768825";
         const client = new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } });
         const payment = new Payment(client);
 
@@ -51,15 +51,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "FALHA GRAVE: payment_method_id indisponível.", bodyRecebido: body }, { status: 400 });
         }
 
-        // Forçando o usuário de teste para TUDO (Pix e Cartão) para bypassar o bloqueio Live
-        const testUserEmail = "test_user_8009766B12812605991@testuser.com";
-
         // 2. MONTAGEM DO PAYLOAD LENDO DE 'body'
         const mpPayload: any = {
             transaction_amount: 120, // Forçado
             description: body.description || 'Inscrição Encontrista - ENCONTRO COM DEUS',
             payment_method_id: methodId,
-            payer: { email: testUserEmail } // Substituição forçada do e-mail para liberar Sandbox
+            payer: {
+                ...(body.payer || body.formData?.payer || body.paymentData?.payer || {}),
+                email: body.email || body.payer?.email || 'sandbox@teste.com'
+            }
         };
 
         // Extração defensiva para cartões - garantida de bater em todas as rotas
@@ -131,13 +131,7 @@ export async function POST(req: Request) {
         }, { status: 201 });
 
     } catch (error: any) {
-        console.error("ERRO MP:", error);
-        return NextResponse.json(
-            { 
-                error: "V4_CACHE_LIMPADO", // NOVA MARCA D'ÁGUA
-                details: error?.message || String(error)
-            }, 
-            { status: 500 }
-        );
+        console.error("ERRO MP SANDBOX:", error);
+        return NextResponse.json({ error: "Erro na API do Mercado Pago", details: error?.message || String(error) }, { status: 500 });
     }
 }
