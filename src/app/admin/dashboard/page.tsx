@@ -39,8 +39,8 @@ export default function AdminDashboard() {
         setLoadingData(true);
         try {
             const [resEnc, resServ] = await Promise.all([
-                supabase.from('inscricoes').select('*').order('created_at', { ascending: false }),
-                supabase.from('inscricoes_servos').select('*').order('created_at', { ascending: false })
+                supabase.from('inscricoes').select('*').eq('status_pagamento', 'approved').order('nome_completo', { ascending: true }),
+                supabase.from('inscricoes_servos').select('*').eq('status_pagamento', 'approved').order('nome_completo', { ascending: true })
             ]);
             if (resEnc.data) setEncontristas(resEnc.data);
             if (resServ.data) setServos(resServ.data);
@@ -192,35 +192,24 @@ export default function AdminDashboard() {
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
                                         <th className="p-4">Nome</th>
-                                        <th className="p-4">{activeTab === "encontristas" ? "Líder de Célula" : "Função / Rede"}</th>
-                                        <th className="p-4">Status Pgto</th>
+                                        <th className="p-4">Líder de Célula</th>
+                                        <th className="p-4">Discipulador</th>
+                                        <th className="p-4">Rede</th>
                                         <th className="p-4 text-right">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {currentData.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-gray-500">Nenhum registro encontrado.</td>
+                                            <td colSpan={5} className="p-8 text-center text-gray-500">Nenhum registro encontrado.</td>
                                         </tr>
                                     ) : (
                                         currentData.map((user) => (
                                             <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                                <td className="p-4 font-medium text-gray-900">{user.nome_completo || "Sem Nome"}</td>
-                                                <td className="p-4 text-gray-600">
-                                                    {activeTab === "encontristas" 
-                                                        ? user.lider_celula || "-" 
-                                                        : user.funcao_igreja || user.rede || "-"
-                                                    }
-                                                </td>
-                                                <td className="p-4">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                        user.status_pagamento === 'pago' || user.status_pagamento === 'approved' ? 'bg-green-100 text-green-700' :
-                                                        user.status_pagamento === 'pendente' || user.status_pagamento === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                        'bg-red-100 text-red-700'
-                                                    }`}>
-                                                        {(user.status_pagamento || 'desconhecido').toUpperCase()}
-                                                    </span>
-                                                </td>
+                                                <td className="p-4 font-medium text-gray-900">{user.nome_completo || user.nome || "Sem Nome"}</td>
+                                                <td className="p-4 text-gray-600">{user.lider_celula || "-"}</td>
+                                                <td className="p-4 text-gray-600">{user.discipulador || "-"}</td>
+                                                <td className="p-4 text-gray-600">{user.rede || "-"}</td>
                                                 <td className="p-4 text-right">
                                                     <button 
                                                         onClick={() => openModal(user)}
