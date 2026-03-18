@@ -75,32 +75,40 @@ export default function InscricaoPage() {
                     }),
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Erro na API de Checkout:", errorData);
-                    alert("Erro ao processar pagamento. Verifique os dados ou o console e tente novamente.");
-                    return reject(); // Rejeita para o botão destravar
-                }
-
                 const data = await response.json();
-                
-                if (data.error) {
-                    console.error("Erro retornado:", data.error);
-                    alert("Erro reportado pelo servidor. Tente novamente.");
-                    return reject();
+
+                // 1. CAPTURA DE RECUSA DO BANCO (Cartão sem limite, bloqueado, etc)
+                if (data.status === 'rejected' || data.error === 'Pagamento recusado' || response.status === 400) {
+                    console.warn("Pagamento recusado pelo banco:", data);
+                    alert("Pagamento recusado pelo banco. Verifique os dados do cartão, tente outro cartão ou use o PIX.");
+                    reject(); // OBRIGATÓRIO: Destrava o botão do Brick para o usuário tentar novamente
+                    return;
                 }
 
-                // Se for cartão aprovado, podemos redirecionar para a tela de sucesso
-                if (data.status === 'approved') {
-                    setTimeout(() => window.location.href = "/sucesso", 2000);
+                // 2. CAPTURA DE ERRO INTERNO DA API
+                if (!response.ok || data.error) {
+                    console.error("Erro na API de Checkout:", data);
+                    alert("Erro de comunicação com o servidor. Tente novamente.");
+                    reject();
+                    return;
                 }
-                
-                // Em cenário ideal sem throw, resolvemos a Promise para destravar loading visual do botão MP
-                resolve();
+
+                // 3. SUCESSO (PIX pendente, Cartão aprovado ou em análise manual)
+                if (data.id && (data.status === 'approved' || data.status === 'pending' || data.status === 'in_process')) {
+                    resolve(); // Destrava o botão com animação de sucesso nativa do Brick
+                    
+                    // Redireciona para a tela de sucesso repassando o ID do pagamento
+                    setTimeout(() => {
+                        window.location.href = `/sucesso?payment_id=${data.id}`; 
+                    }, 1000);
+                } else {
+                    // Fallback de segurança para status desconhecidos
+                    reject();
+                }
 
             } catch (error) {
-                console.error("Erro processando o fetch:", error);
-                alert("Falha grave na comunicação com pagamento.");
+                console.error("Erro fatal no fetch:", error);
+                alert("Falha na conexão. Verifique sua internet.");
                 reject();
             }
         });
